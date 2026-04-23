@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理学実験室</title>
+    <style>
+        /* 1. 背景は薄いグレー */
+        body {
+            background-color: #f0f0f0; 
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* 2. 画面中央に大きな文字 */
+        h1 {
+            font-size: 3rem;
+            color: #333333;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* 3. 青いボタン */
+        .start-btn {
+            background-color: #007bff; 
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        /* ボタンをホバー（マウスを乗せた）時の動き */
+        .start-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* ボタンをクリックした時の動き */
+        .start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>心理学実験室へようこそ</h1>
+    
+    <button class="start-btn" onclick="showAlert()">実験を開始する</button>
+
+    <script>
+        // 4. アラートで『Hello World!』と表示する関数
+        function showAlert() {
+            alert('Hello World!');
+        }
+    </script>
+
+</body>
+</html>
