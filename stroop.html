@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストループ課題 (Stroop Task)</title>
+  
+  <!-- jsPsychのライブラリ（v7.3.3系）をCDN経由で読み込む -->
+  <script src="https://unpkg.com/jspsych@7.3.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+  <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+
+  <style>
+    /* 全体的なスタイル設定 */
+    body {
+      background-color: #FFFFFF; /* 背景色: 白 */
+      font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; /* フォント設定 */
+    }
+    
+    /* 刺激（文字）を表示するためのクラス */
+    .stimulus {
+      font-size: 60px; /* 刺激の文字サイズ */
+      font-weight: bold;
+    }
+    
+    /* 教示文や注視点を表示するためのクラス */
+    .instruction {
+      font-size: 24px; /* 教示の文字サイズ */
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    // jsPsychの初期化。実験終了時にデータをCSV形式で画面に表示する。
+    const jsPsych = initJsPsych({
+      on_finish: function() {
+        jsPsych.data.displayData('csv');
+      }
+    });
+
+    // タイムライン（実験の進行順序）を格納する配列
+    const timeline = [];
+
+    // 1. 全画面化 (Fullscreen)
+    const enter_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: true,
+      message: '<p class="instruction">実験をフルスクリーンで開始します。</p>',
+      button_label: '全画面化して開始'
+    };
+    timeline.push(enter_fullscreen);
+
+    // 2. 教示画面
+    const instructions = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <div class="instruction">
+          <p>文字の<strong>『色』</strong>をキーボードで答えてください。</p>
+          <p>赤色なら <kbd>r</kbd> キー</p>
+          <p>青色なら <kbd>b</kbd> キー</p>
+          <p>緑色なら <kbd>g</kbd> キー</p>
+          <p>スペースキーを押すと開始します。</p>
+        </div>
+      `,
+      choices: [' '] // スペースキーで次に進む
+    };
+    timeline.push(instructions);
+
+    // 3. 刺激 (Stimuli) - 要因計画
+    // 文字 ("赤", "青", "緑") と色 (red, blue, green) の組み合わせ
+    const test_stimuli = [
+      // 一致条件 (Congruent)
+      { word: "赤", color: "red", condition: "congruent", correct_key: "r" },
+      { word: "青", color: "blue", condition: "congruent", correct_key: "b" },
+      { word: "緑", color: "green", condition: "congruent", correct_key: "g" },
+      
+      // 不一致条件 (Incongruent)
+      { word: "赤", color: "blue", condition: "incongruent", correct_key: "b" },
+      { word: "赤", color: "green", condition: "incongruent", correct_key: "g" },
+      { word: "青", color: "red", condition: "incongruent", correct_key: "r" },
+      { word: "青", color: "green", condition: "incongruent", correct_key: "g" },
+      { word: "緑", color: "red", condition: "incongruent", correct_key: "r" },
+      { word: "緑", color: "blue", condition: "incongruent", correct_key: "b" }
+    ];
+
+    // 4. 試行の流れ (Timeline) - a. 注視点
+    const fixation = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div class="stimulus" style="color: black;">+</div>',
+      choices: "NO_KEYS", // キー入力を受け付けない
+      trial_duration: 500, // 500ms 表示
+      data: { task: 'fixation' } // データ分析用のタグ
+    };
+
+    // 4. 試行の流れ (Timeline) - b. 刺激提示
+    const test = {
+      type: jsPsychHtmlKeyboardResponse,
+      // timeline_variables を使って動的に刺激を生成
+      stimulus: function() {
+        const word = jsPsych.timelineVariable('word');
+        const color = jsPsych.timelineVariable('color');
+        return `<div class="stimulus" style="color: ${color};">${word}</div>`;
+      },
+      choices: ['r', 'b', 'g'], // 許容するキー入力
+      data: {
+        task: 'response',
+        word: jsPsych.timelineVariable('word'),
+        color: jsPsych.timelineVariable('color'),
+        condition: jsPsych.timelineVariable('condition'),
+        correct_response: jsPsych.timelineVariable('correct_key')
+      },
+      // 反応が正しかったかどうかを記録
+      on_finish: function(data) {
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    };
+
+    // メイン試行ループの定義
+    const test_procedure = {
+      timeline: [fixation, test], // 注視点 -> 刺激提示 の順番
+      timeline_variables: test_stimuli, // 使用する刺激リスト
+      sample: {
+        type: 'with-replacement', // 重複ありのランダム抽出
+        size: 10 // 試行数を10回に設定
+      },
+      // 4. 試行の流れ (Timeline) - c. 試行間隔 (ITI)
+      // jsPsychの仕様上、trial間にITIを入れる場合はpost_trial_gapを設定するのが一般的
+      // 今回は仕様書に従い、明確な空白画面を1000ms入れる方法とするため、ITI用の試行を追加することも可能だが、
+      // test試行の後にgapを入れる設定にする。
+      // もし独立した画面が必要なら timeline_variables の後に追加する形になる。
+      // ここでは test 試行の後に 1000ms の gap を入れる設定で ITI を実現する。
+    };
+    
+    // test試行の後にITI(1000ms)を追加するための設定
+    test.post_trial_gap = 1000;
+
+    timeline.push(test_procedure);
+
+    // 実験の実行
+    jsPsych.run(timeline);
+  </script>
+</body>
+</html>
